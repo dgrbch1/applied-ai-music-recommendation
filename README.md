@@ -81,6 +81,11 @@ Ranking rule:
 
 You need both rules: scoring decides fit per song, ranking turns all scores into a recommendation list.
 
+Optional enhancements now supported in code:
+
+- Tempo preference: add `tempo_bpm` to the user profile and set `weights.tempo` to reward BPM closeness.
+- Diversity mode: set `diversity_by_genre` to `true` to encourage top results from different genres.
+
 ### Step 4: Visualize the Design (Data Flow)
 
 Input -> Process -> Output map:

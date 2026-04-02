@@ -114,6 +114,7 @@ def score_song(user_prefs: Dict, song: Dict) -> Tuple[float, List[str]]:
     genre_weight = float(weights.get("genre", 2.0))
     mood_weight = float(weights.get("mood", 1.0))
     energy_weight = float(weights.get("energy", 1.0))
+    tempo_weight = float(weights.get("tempo", 0.0))
     use_mood = bool(user_prefs.get("use_mood", True))
 
     genre_match = 1.0 if song["genre"] == user_prefs.get("genre") else 0.0
@@ -122,11 +123,21 @@ def score_song(user_prefs: Dict, song: Dict) -> Tuple[float, List[str]]:
 
     score = genre_weight * genre_match + mood_weight * mood_match + energy_weight * energy_similarity
 
+    target_tempo = user_prefs.get("tempo_bpm")
+    if target_tempo is not None and tempo_weight > 0.0:
+        tempo_tolerance = float(user_prefs.get("tempo_tolerance", 60.0))
+        tempo_similarity = max(0.0, 1.0 - abs(song["tempo_bpm"] - float(target_tempo)) / tempo_tolerance)
+        score += tempo_weight * tempo_similarity
+    else:
+        tempo_similarity = None
+
     if genre_match:
         reasons.append(f"genre match (+{genre_weight:.1f})")
     if mood_match:
         reasons.append(f"mood match (+{mood_weight:.1f})")
     reasons.append(f"energy similarity (+{energy_similarity * energy_weight:.2f})")
+    if tempo_similarity is not None:
+        reasons.append(f"tempo similarity (+{tempo_similarity * tempo_weight:.2f})")
 
     return score, reasons
 
@@ -141,4 +152,28 @@ def recommend_songs(user_prefs: Dict, songs: List[Dict], k: int = 5) -> List[Tup
 
     # In-place sort keeps memory usage small for this simple CLI pipeline.
     scored_results.sort(key=lambda item: item[1], reverse=True)
-    return scored_results[:k]
+
+    if not user_prefs.get("diversity_by_genre", False):
+        return scored_results[:k]
+
+    diverse_results: List[Tuple[Dict, float, List[str]]] = []
+    seen_genres = set()
+    selected_ids = set()
+
+    for item in scored_results:
+        song, _, reasons = item
+        if song["genre"] not in seen_genres:
+            diverse_results.append((song, item[1], reasons + ["diversity boost (new genre)"]))
+            seen_genres.add(song["genre"])
+            selected_ids.add(song["id"])
+        if len(diverse_results) >= k:
+            return diverse_results[:k]
+
+    for item in scored_results:
+        if item[0]["id"] not in selected_ids:
+            diverse_results.append(item)
+            selected_ids.add(item[0]["id"])
+        if len(diverse_results) >= k:
+            break
+
+    return diverse_results[:k]
