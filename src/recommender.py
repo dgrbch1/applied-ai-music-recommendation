@@ -18,6 +18,11 @@ class Song:
     valence: float
     danceability: float
     acousticness: float
+    popularity: int = 50
+    release_decade: int = 2010
+    detailed_mood_tags: str = ""
+    instrumentalness: float = 0.5
+    speechiness: float = 0.1
 
 @dataclass
 class UserProfile:
@@ -97,6 +102,11 @@ def load_songs(csv_path: str) -> List[Dict]:
                     "valence": float(row["valence"]),
                     "danceability": float(row["danceability"]),
                     "acousticness": float(row["acousticness"]),
+                    "popularity": int(row.get("popularity", 50)),
+                    "release_decade": int(row.get("release_decade", 2010)),
+                    "detailed_mood_tags": row.get("detailed_mood_tags", ""),
+                    "instrumentalness": float(row.get("instrumentalness", 0.5)),
+                    "speechiness": float(row.get("speechiness", 0.1)),
                 }
             )
     return songs
@@ -105,6 +115,27 @@ def load_songs(csv_path: str) -> List[Dict]:
 def _closeness(value: float, target: float) -> float:
     """Return similarity in [0, 1] based on distance between value and target."""
     return max(0.0, 1.0 - abs(value - target))
+
+
+def _normalized_closeness(value: float, target: float, scale: float) -> float:
+    """Return similarity in [0, 1] using a custom distance scale."""
+    if scale <= 0:
+        return 0.0
+    return max(0.0, 1.0 - abs(value - target) / scale)
+
+
+def _tag_overlap_score(song_tags_raw: str, preferred_tags: List[str]) -> float:
+    """Return overlap ratio between preferred tags and song detailed mood tags."""
+    if not preferred_tags:
+        return 0.0
+
+    song_tags = {tag.strip().lower() for tag in song_tags_raw.split("|") if tag.strip()}
+    prefs = {tag.strip().lower() for tag in preferred_tags if tag.strip()}
+    if not prefs:
+        return 0.0
+
+    overlap = len(song_tags.intersection(prefs))
+    return overlap / len(prefs)
 
 def score_song(user_prefs: Dict, song: Dict) -> Tuple[float, List[str]]:
     """Score one song against user preferences and return reasons for the score."""
@@ -115,6 +146,11 @@ def score_song(user_prefs: Dict, song: Dict) -> Tuple[float, List[str]]:
     mood_weight = float(weights.get("mood", 1.0))
     energy_weight = float(weights.get("energy", 1.0))
     tempo_weight = float(weights.get("tempo", 0.0))
+    popularity_weight = float(weights.get("popularity", 0.0))
+    decade_weight = float(weights.get("decade", 0.0))
+    tag_weight = float(weights.get("tag", 0.0))
+    instrumentalness_weight = float(weights.get("instrumentalness", 0.0))
+    speechiness_weight = float(weights.get("speechiness", 0.0))
     use_mood = bool(user_prefs.get("use_mood", True))
 
     genre_match = 1.0 if song["genre"] == user_prefs.get("genre") else 0.0
@@ -131,6 +167,36 @@ def score_song(user_prefs: Dict, song: Dict) -> Tuple[float, List[str]]:
     else:
         tempo_similarity = None
 
+    popularity_similarity = None
+    if popularity_weight > 0.0:
+        target_popularity = float(user_prefs.get("target_popularity", 50.0))
+        popularity_similarity = _normalized_closeness(float(song.get("popularity", 50.0)), target_popularity, 100.0)
+        score += popularity_weight * popularity_similarity
+
+    decade_similarity = None
+    if decade_weight > 0.0:
+        target_decade = float(user_prefs.get("target_decade", 2010.0))
+        decade_similarity = _normalized_closeness(float(song.get("release_decade", 2010.0)), target_decade, 40.0)
+        score += decade_weight * decade_similarity
+
+    tag_similarity = None
+    if tag_weight > 0.0:
+        preferred_tags = user_prefs.get("preferred_tags", [])
+        tag_similarity = _tag_overlap_score(str(song.get("detailed_mood_tags", "")), preferred_tags)
+        score += tag_weight * tag_similarity
+
+    instrumentalness_similarity = None
+    if instrumentalness_weight > 0.0:
+        target_instrumentalness = float(user_prefs.get("target_instrumentalness", 0.5))
+        instrumentalness_similarity = _closeness(float(song.get("instrumentalness", 0.5)), target_instrumentalness)
+        score += instrumentalness_weight * instrumentalness_similarity
+
+    speechiness_similarity = None
+    if speechiness_weight > 0.0:
+        target_speechiness = float(user_prefs.get("target_speechiness", 0.1))
+        speechiness_similarity = _closeness(float(song.get("speechiness", 0.1)), target_speechiness)
+        score += speechiness_weight * speechiness_similarity
+
     if genre_match:
         reasons.append(f"genre match (+{genre_weight:.1f})")
     if mood_match:
@@ -138,6 +204,16 @@ def score_song(user_prefs: Dict, song: Dict) -> Tuple[float, List[str]]:
     reasons.append(f"energy similarity (+{energy_similarity * energy_weight:.2f})")
     if tempo_similarity is not None:
         reasons.append(f"tempo similarity (+{tempo_similarity * tempo_weight:.2f})")
+    if popularity_similarity is not None:
+        reasons.append(f"popularity similarity (+{popularity_similarity * popularity_weight:.2f})")
+    if decade_similarity is not None:
+        reasons.append(f"release decade similarity (+{decade_similarity * decade_weight:.2f})")
+    if tag_similarity is not None and tag_similarity > 0.0:
+        reasons.append(f"detailed mood tags overlap (+{tag_similarity * tag_weight:.2f})")
+    if instrumentalness_similarity is not None:
+        reasons.append(f"instrumentalness similarity (+{instrumentalness_similarity * instrumentalness_weight:.2f})")
+    if speechiness_similarity is not None:
+        reasons.append(f"speechiness similarity (+{speechiness_similarity * speechiness_weight:.2f})")
 
     return score, reasons
 

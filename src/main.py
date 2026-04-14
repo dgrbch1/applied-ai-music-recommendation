@@ -46,6 +46,26 @@ def main() -> None:
             "mood": "intense",
             "energy": 0.92,
         },
+        "Nostalgic 2000s Chill": {
+            "genre": "lofi",
+            "mood": "chill",
+            "energy": 0.40,
+            "target_popularity": 65,
+            "target_decade": 2000,
+            "preferred_tags": ["nostalgic", "rainy", "cozy"],
+            "target_instrumentalness": 0.70,
+            "target_speechiness": 0.04,
+            "weights": {
+                "genre": 1.5,
+                "mood": 1.0,
+                "energy": 1.0,
+                "popularity": 0.8,
+                "decade": 0.8,
+                "tag": 1.2,
+                "instrumentalness": 0.7,
+                "speechiness": 0.5,
+            },
+        },
         # Adversarial / edge-case profiles for stress testing.
         "Conflicting: Chill + Very High Energy": {
             "genre": "ambient",
