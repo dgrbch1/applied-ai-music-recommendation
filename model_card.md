@@ -1,121 +1,65 @@
-# Model Card - VibeRank CLI 1.0
+# Model Card
 
-## 1. Model Name
+## Model Name
 
-VibeRank CLI 1.0
+VibeFinder 1.0
 
-## 2. Intended Use
+## Goal / Task
 
-This model recommends top songs from a small CSV catalog based on user taste preferences.
-Primary users are students learning how recommendation systems transform data into ranked predictions.
+This recommender suggests songs from a small catalog.
+It predicts which songs best match one user taste profile.
 
-## 3. Out of Scope
+## Data Used
 
-- Real-world personalization at production scale
-- Safety-critical or high-stakes decisions
-- Monetization or ad targeting
+The dataset is in data/songs.csv.
+It has 18 songs.
+Each song has genre, mood, energy, tempo_bpm, valence, danceability, and acousticness.
+The data is small and hand-labeled, so it does not represent all listeners.
+Mood labels are subjective.
 
-## 4. Inputs and Outputs
+## Algorithm Summary
 
-Inputs:
+The model gives points when genre matches the user.
+The model gives points when mood matches the user.
+The model also gives similarity points when song energy is close to the user's target energy.
+Then it ranks all songs by total score and returns the top results.
+The output also includes short reason strings, like genre match and energy similarity.
 
-- Song attributes: genre, mood, energy, tempo_bpm, valence, danceability, acousticness
-- User preference profile: preferred genre, preferred mood, target energy, optional weighting controls
+## Observed Behavior / Biases
 
-Outputs:
+Genre has a strong weight, so the model can repeat the same style.
+That can create a filter bubble.
+Songs from underrepresented genres can appear less often.
+If mood labels are noisy, rankings can feel unfair.
 
-- Ranked list of songs
-- Per-song score
-- Human-readable reasons (for example genre match, mood match, energy similarity)
+## Evaluation Process
 
-## 5. Data
+I tested multiple profiles, including pop/happy, chill/lofi, and intense/rock.
+I also tested edge cases, like conflicting preferences and missing genre/mood.
+I compared baseline weights with an energy-heavy version.
+I ran automated tests and confirmed all tests pass.
 
-Source file: `data/songs.csv`
+## Intended Use and Non-Intended Use
 
-Data characteristics:
+Intended use:
+- Classroom learning
+- Simple, explainable recommendation demos
 
-- 18 songs
-- Hand-curated labels
-- Limited genre and mood coverage
-- Not representative of global listening behavior
+Non-intended use:
+- Real production personalization
+- High-stakes decisions
+- Any use where fairness or safety requires stronger validation
 
-Data limitations:
+## Ideas for Improvement
 
-- Small sample size
-- Subjective labels (especially mood)
-- Unknown annotation consistency
+- Add more songs and better genre balance
+- Add collaborative signals like likes and skips
+- Add diversity-aware ranking so recommendations are less repetitive
 
-## 6. Model Details
+## Personal Reflection
 
-Type: content-based weighted score recommender
-
-Scoring idea:
-
-- Categorical matches: genre and mood
-- Numeric similarity: energy closeness to target
-
-Default rule:
-
-- `score = 2.0 * genre_match + 1.0 * mood_match + 1.0 * energy_similarity`
-
-Ranking:
-
-- Compute score for every song
-- Sort descending
-- Return top `k`
-
-## 7. Evaluation
-
-Evaluation methods used:
-
-- Unit tests for scoring and ranking behavior
-- Manual profile-based scenario checks
-- Weight sensitivity experiment
-
-Test status at submission:
-
-- `4 passed`
-
-Representative scenarios:
-
-- High-Energy Pop
-- Chill Lofi
-- Deep Intense Rock
-- Conflicting profile (chill + very high energy)
-- Genreless profile (energy-only)
-
-## 8. Bias, Risks, and Harms
-
-Known bias risks:
-
-- Filter bubble risk when genre has high weight
-- Under-recommendation of underrepresented genres in the dataset
-- Label bias from subjective mood tags
-- Popularity and social effects absent (no collaborative signals)
-
-Potential harm if misused:
-
-- Reinforcement of narrow taste patterns
-- Reduced discovery of diverse music
-
-## 9. Transparency and Explainability
-
-The model is intentionally interpretable:
-
-- Score components are explicit and weighted
-- Explanations list which factors contributed points
-- Weight values can be inspected and adjusted
-
-## 10. Future Improvements
-
-- Expand dataset size and genre balance
-- Add user feedback loops (likes, skips) and collaborative features
-- Add diversity-aware reranking constraints
-- Calibrate weights with validation metrics instead of manual defaults
-- Improve label quality and consistency checks
-
-## 11. Ethical Reflection
-
-The model demonstrates that recommendation quality is not just about prediction accuracy.
-Weight choices encode product values. A design that optimizes only match strength can reduce diversity and increase filter bubbles.
-Future versions should optimize both relevance and exploration.
+My biggest learning moment was seeing how one weight change can shift many recommendations.
+AI tools helped me draft scoring options and test ideas quickly.
+I still had to double-check AI suggestions, especially around weight choices and edge cases.
+I was surprised that a simple formula can still feel like a real recommender.
+If I continue this project, I want to add diversity controls and user feedback signals.
