@@ -1,98 +1,53 @@
-"""
-Command line runner for the Music Recommender Simulation.
+"""Command line runner for the Music Recommender Simulation."""
 
-This file helps you quickly run and test your recommender.
-
-You will implement the functions in recommender.py:
-- load_songs
-- score_song
-- recommend_songs
-"""
-
+from src.agents.router import route_query
+from src.reasoning.output import format_recommendation_output, unclear_query_message
 from src.recommender import load_songs, recommend_songs
 
 
-def print_recommendations(profile_name: str, user_prefs: dict, songs: list[dict], k: int = 5) -> None:
-    """Print top-k recommendations for a single profile in a readable layout."""
-    recommendations = recommend_songs(user_prefs, songs, k=k)
+def _build_user_preferences_from_query(user_query: str) -> dict:
+    """Build simple preferences from query text with safe defaults."""
+    text = user_query.lower()
 
-    print(f"\n=== {profile_name} ===")
-    for idx, (song, score, reasons) in enumerate(recommendations, start=1):
-        print(f"{idx}. {song['title']} by {song['artist']}")
-        print(f"   Score: {score:.2f}")
-        print("   Reasons:")
-        for reason in reasons:
-            print(f"   - {reason}")
-        print()
+    genre = "pop"
+    if "rock" in text:
+        genre = "rock"
+    elif "lofi" in text:
+        genre = "lofi"
+
+    mood = "happy"
+    if "chill" in text:
+        mood = "chill"
+    elif "intense" in text:
+        mood = "intense"
+
+    energy = 0.8
+    if "low energy" in text or "calm" in text:
+        energy = 0.4
+    elif "high energy" in text:
+        energy = 0.9
+
+    return {
+        "genre": genre,
+        "mood": mood,
+        "energy": energy,
+    }
 
 
 def main() -> None:
     songs = load_songs("data/songs.csv")
     print(f"Loaded songs: {len(songs)}")
 
-    profiles = {
-        "High-Energy Pop": {
-            "genre": "pop",
-            "mood": "happy",
-            "energy": 0.90,
-        },
-        "Chill Lofi": {
-            "genre": "lofi",
-            "mood": "chill",
-            "energy": 0.38,
-        },
-        "Deep Intense Rock": {
-            "genre": "rock",
-            "mood": "intense",
-            "energy": 0.92,
-        },
-        "Nostalgic 2000s Chill": {
-            "genre": "lofi",
-            "mood": "chill",
-            "energy": 0.40,
-            "target_popularity": 65,
-            "target_decade": 2000,
-            "preferred_tags": ["nostalgic", "rainy", "cozy"],
-            "target_instrumentalness": 0.70,
-            "target_speechiness": 0.04,
-            "weights": {
-                "genre": 1.5,
-                "mood": 1.0,
-                "energy": 1.0,
-                "popularity": 0.8,
-                "decade": 0.8,
-                "tag": 1.2,
-                "instrumentalness": 0.7,
-                "speechiness": 0.5,
-            },
-        },
-        # Adversarial / edge-case profiles for stress testing.
-        "Conflicting: Chill + Very High Energy": {
-            "genre": "ambient",
-            "mood": "chill",
-            "energy": 0.95,
-        },
-        "Genreless Energy-Only": {
-            "genre": "",
-            "mood": "",
-            "energy": 0.75,
-        },
-    }
+    user_query = input("What would you like? ").strip()
+    route = route_query(user_query)
 
-    for profile_name, user_prefs in profiles.items():
-        print_recommendations(profile_name, user_prefs, songs, k=5)
+    if route == "unknown":
+        print(unclear_query_message())
+        return
 
-    # Step 3 experiment: weight shift (energy x2, genre x0.5 of original 2.0 -> 1.0).
-    baseline = {"genre": "pop", "mood": "happy", "energy": 0.90}
-    weight_shift = {
-        "genre": "pop",
-        "mood": "happy",
-        "energy": 0.90,
-        "weights": {"genre": 1.0, "mood": 1.0, "energy": 2.0},
-    }
-
-    print_recommendations("Experiment Baseline: Pop/Happy", baseline, songs, k=5)
-    print_recommendations("Experiment Weight Shift: Genre 1.0, Mood 1.0, Energy 2.0", weight_shift, songs, k=5)
+    user_prefs = _build_user_preferences_from_query(user_query)
+    recommendations = recommend_songs(user_prefs, songs, k=5)
+    print(format_recommendation_output(recommendations))
 
 
 if __name__ == "__main__":
