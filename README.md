@@ -1,5 +1,15 @@
 # Applied AI Music Recommendation System
 
+Project demo video: Watch my project demo here: https://www.loom.com/share/99985f6fb7af4546873ad6b57916f724
+
+## 🎥 Video Walkthrough
+
+This video demonstrates the system running end-to-end, including:
+- AI routing (agent behavior)
+- Recommendations
+- Explanation logic
+- Guardrails
+
 ## 1. Title and Summary
 
 This project is a Python-based Applied AI Music Recommendation System that takes a user query, interprets intent, recommends songs, and explains why those songs were selected.
@@ -41,7 +51,13 @@ What each component does:
 - Guardrails for unclear queries and empty recommendation sets
 - Unit testing for reliability and regression safety
 
-## 5. Setup Instructions
+## 5. User Input Preview
+
+This screenshot shows the user input connected to the recommender flow in the `assets` folder:
+
+![User input preview](assets/User%20Input%20to%20Recommender-2026-04-27-020950.png)
+
+## 6. Setup Instructions
 
 1. Clone the repository
 
@@ -62,7 +78,7 @@ pip install -r requirements.txt
 python -m src.main
 ```
 
-## 6. Sample Interactions
+## 7. Sample Interactions
 
 ### Example 1
 
@@ -114,7 +130,7 @@ No songs found, try a different input.
 I could not understand your request. Try asking me to recommend songs or explain why a song was recommended.
 ```
 
-## 7. Design Decisions
+## 8. Design Decisions
 
 I used a modular structure to keep the system easy to extend and easy to test.
 The router, recommender, and output reasoning are separated so each part has one clear responsibility.
@@ -125,7 +141,7 @@ Trade-offs:
 - More advanced ML (embeddings, collaborative filtering, LLM intent parsing) could improve personalization but adds complexity, data requirements, and tuning overhead.
 - For this version, clarity and maintainability were prioritized over model sophistication.
 
-## 8. Testing and Reliability
+## 9. Testing and Reliability
 
 Current test status: 4/4 tests passed.
 
@@ -138,13 +154,13 @@ Reliability practices used:
   - empty recommendation results
 - Safe fallback messages are returned instead of crashing or giving blank output.
 
-## 9. Reflection
+## 10. Reflection
 
 The main thing I learned is that building an AI system is not just about ranking outputs.
 You also need intent handling, clear reasoning, and reliability checks so users can trust what they see.
 Even with simple rules, system design decisions strongly affect usability, transparency, and failure behavior.
 
-## 10. Ethics and Limitations
+## 11. Ethics and Limitations
 
 This system has real limitations and should be used with those in mind.
 
