@@ -3,7 +3,7 @@
 A modular, production-oriented Python application that demonstrates applied AI techniques for semantic search, intent understanding, and explainable ranking. This system goes beyond basic filtering by combining rule-based logic with semantic embeddings, confidence scoring, and safety guardrails.
 
 ---
-
+Video Walkthrough: https://www.loom.com/share/b164162233a64cc0b5ff9e0c7791cfe8
 ## 1. Project Overview
 
 This project implements an intelligent music recommendation engine that:
